@@ -4,7 +4,7 @@ import { jsPDF } from "jspdf";
 const SERVICIOS = [
   { id: 'cuc', codigo: 'KP-01', nombre: 'Control de Cucaracha Germánica/Americana', icono: '🪳' },
   { id: 'chi', codigo: 'KP-02', nombre: 'Tratamiento contra Chinche de Cama', icono: '🛏️' },
-  { id: 'ter', codigo: 'KP-03', nombre: 'Barrera Química contra Termita Subterránea', icono: '🪵' },
+  { id: 'ter', codigo: 'KP-03', nombre: 'Barrera Química contra Termita Subterránea', icono: '🛡️' },
   { id: 'roe', codigo: 'KP-04', nombre: 'Control y Reubicación de Roedores', icono: '🐀' },
   { id: 'san', codigo: 'KP-05', nombre: 'Sanitización y Desinfección de Alto Nivel', icono: '🧪' },
   { id: 'fum', codigo: 'KP-06', nombre: 'Fumigación Preventiva Residencial/Comercial', icono: '💨' },
@@ -338,39 +338,59 @@ export default function App() {
         .field-input::placeholder { color:var(--muted); }
         .field-input:focus { border-color:var(--green); box-shadow:0 0 0 3px var(--green-glow); }
         .list-container { border:1px solid var(--border); border-radius:2px; overflow:hidden; }
-        .service-row {
-          display:flex; align-items:center; gap:1rem; padding:0.85rem 1rem;
-          border-bottom:1px solid var(--border); cursor:pointer; transition:background .15s;
-        }
-        .service-row:last-child { border-bottom:none; }
-        .service-row:hover { background:rgba(74,222,128,0.03); }
-        .service-row.active { background:rgba(74,222,128,0.06); }
-        .svc-check {
-          width:1.1rem; height:1.1rem; border:1.5px solid var(--muted); border-radius:2px;
-          flex-shrink:0; display:flex; align-items:center; justify-content:center; transition:all .15s;
-        }
-        .service-row.active .svc-check { border-color:var(--green); background:var(--green); }
-        .svc-check svg { display:none; }
-        .service-row.active .svc-check svg { display:block; }
-        .svc-code { font-family:var(--mono); font-size:0.6rem; color:var(--muted); width:3rem; flex-shrink:0; }
-        .service-row.active .svc-code { color:var(--green); }
-        .svc-icon { font-size:1rem; flex-shrink:0; }
-        .svc-name {
-          flex:1; font-family:var(--display); font-size:0.92rem; font-weight:600;
-          letter-spacing:0.02em; color:#6b9e7a; transition:color .15s; line-height:1.3;
-        }
-        .service-row.active .svc-name { color:var(--text); }
-        .svc-price-wrap {
-          display:flex; align-items:center; gap:0.3rem;
-          overflow:hidden; max-width:0; opacity:0; transition:max-width .25s ease, opacity .2s ease;
-        }
-        .service-row.active .svc-price-wrap { max-width:140px; opacity:1; }
-        .svc-price-sym { font-family:var(--mono); font-size:0.75rem; color:var(--green); flex-shrink:0; }
-        .svc-price-input {
-          background:var(--bg); border:1px solid var(--green-dim); border-radius:2px;
-          color:var(--green); font-family:var(--mono); font-size:0.85rem;
-          padding:0.4rem 0.5rem; width:100px; outline:none; text-align:right; transition:border-color .2s, box-shadow .2s;
-        }
+.service-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.85rem 1rem;
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+  transition: background .15s;
+  flex-wrap: wrap;  /* ← añade esto */
+}
+
+.svc-name {
+  flex: 1;
+  font-family: var(--display);
+  font-size: 0.92rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: #6b9e7a;
+  transition: color .15s;
+  line-height: 1.3;
+  min-width: 0;  /* ← añade esto */
+}
+
+.svc-price-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  overflow: hidden;
+  max-width: 0;
+  opacity: 0;
+  transition: max-width .25s ease, opacity .2s ease;
+  width: 100%;        /* ← añade esto */
+  padding-left: 2.5rem; /* ← sangría para alinear bajo el nombre */
+}
+
+.service-row.active .svc-price-wrap {
+  max-width: 100%;   /* ← cambia de 140px a 100% */
+  opacity: 1;
+}
+
+.svc-price-input {
+  background: var(--bg);
+  border: 1px solid var(--green-dim);
+  border-radius: 2px;
+  color: var(--green);
+  font-family: var(--mono);
+  font-size: 0.85rem;
+  padding: 0.4rem 0.5rem;
+  width: 140px;      /* ← ancho fijo cómodo */
+  outline: none;
+  text-align: right;
+  transition: border-color .2s, box-shadow .2s;
+}
         .svc-price-input:focus { border-color:var(--green); box-shadow:0 0 0 2px var(--green-glow); }
         .svc-price-input::-webkit-inner-spin-button, .svc-price-input::-webkit-outer-spin-button { -webkit-appearance:none; }
         .totals-panel {
