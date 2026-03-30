@@ -3,13 +3,13 @@ import { jsPDF } from "jspdf";
 
 const SERVICIOS = [
   { id: 'cuc', codigo: 'KP-01', nombre: 'Control de Cucaracha Germánica/Americana', icono: '🪳' },
-  { id: 'chi', codigo: 'KP-02', nombre: 'Tratamiento contra Chinche de Cama', icono: '🛏️' },
-  { id: 'ter', codigo: 'KP-03', nombre: 'Barrera Química contra Termita Subterránea', icono: '🛡️' },
-  { id: 'roe', codigo: 'KP-04', nombre: 'Control y Reubicación de Roedores', icono: '🐀' },
-  { id: 'san', codigo: 'KP-05', nombre: 'Sanitización y Desinfección de Alto Nivel', icono: '🧪' },
-  { id: 'fum', codigo: 'KP-06', nombre: 'Fumigación Preventiva Residencial/Comercial', icono: '💨' },
-  { id: 'ara', codigo: 'KP-07', nombre: 'Control de Arácnidos y Escorpiones', icono: '🦂' },
-  { id: 'urg', codigo: 'KP-08', nombre: 'Servicio de Urgencia / Horario Especial', icono: '⚡' },
+  { id: 'chi', codigo: 'KP-02', nombre: 'Tratamiento contra Chinche de Cama',        icono: '🛏️' },
+  { id: 'ter', codigo: 'KP-03', nombre: 'Barrera Química contra Termita Subterránea', icono: '🪵' },
+  { id: 'roe', codigo: 'KP-04', nombre: 'Control y Reubicación de Roedores',          icono: '🐀' },
+  { id: 'san', codigo: 'KP-05', nombre: 'Sanitización y Desinfección de Alto Nivel',  icono: '🧪' },
+  { id: 'fum', codigo: 'KP-06', nombre: 'Fumigación Preventiva Residencial/Comercial',icono: '💨' },
+  { id: 'ara', codigo: 'KP-07', nombre: 'Control de Arácnidos y Escorpiones',         icono: '🦂' },
+  { id: 'urg', codigo: 'KP-08', nombre: 'Servicio de Urgencia / Horario Especial',    icono: '⚡' },
 ];
 
 const fmt = (n) => new Intl.NumberFormat('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n);
@@ -18,7 +18,7 @@ function useAnimatedNumber(target) {
   const [display, setDisplay] = useState(target);
   useEffect(() => {
     const start = display;
-    const diff = target - start;
+    const diff  = target - start;
     if (diff === 0) return;
     const steps = 18;
     let i = 0;
@@ -33,11 +33,11 @@ function useAnimatedNumber(target) {
 }
 
 export default function App() {
-  const [cliente, setCliente] = useState('');
+  const [cliente,   setCliente]   = useState('');
   const [ubicacion, setUbicacion] = useState('');
-  const [items, setItems] = useState({});
-  const [scanLine, setScanLine] = useState(false);
-  const [logoB64, setLogoB64] = useState(null);
+  const [items,     setItems]     = useState({});
+  const [scanLine,  setScanLine]  = useState(false);
+  const [logoB64,   setLogoB64]   = useState(null);
 
   // Carga el logo, recorta esquinas redondeadas y lo convierte a base64 para el PDF
   useEffect(() => {
@@ -45,10 +45,10 @@ export default function App() {
     img.crossOrigin = 'anonymous';
     img.src = '/logo-kill-plag.png'; // coloca el PNG en /public de tu proyecto Vite/CRA
     img.onload = () => {
-      const size = Math.max(img.naturalWidth, img.naturalHeight);
+      const size   = Math.max(img.naturalWidth, img.naturalHeight);
       const radius = size * 0.12; // 12% de radio — ajusta a gusto
       const canvas = document.createElement('canvas');
-      canvas.width = img.naturalWidth;
+      canvas.width  = img.naturalWidth;
       canvas.height = img.naturalHeight;
       const ctx = canvas.getContext('2d');
       const w = img.naturalWidth, h = img.naturalHeight;
@@ -70,11 +70,21 @@ export default function App() {
     };
   }, []);
 
+  // Estado extra: estaciones para roedores
+  const [estaciones, setEstaciones] = useState({ activo: false, cantidad: '', precio: '' });
+  // Estado extra: segundo servicio para cucaracha
+  const [segundoSvc, setSegundoSvc] = useState({ activo: false, precio: '' });
+
   const toggleItem = (id) => {
     setItems(prev => {
       const next = { ...prev };
-      if (next[id] !== undefined) delete next[id];
-      else next[id] = '';
+      if (next[id] !== undefined) {
+        delete next[id];
+        if (id === 'roe') setEstaciones({ activo: false, cantidad: '', precio: '' });
+        if (id === 'cuc') setSegundoSvc({ activo: false, precio: '' });
+      } else {
+        next[id] = '';
+      }
       return next;
     });
   };
@@ -82,26 +92,30 @@ export default function App() {
   const setPrice = (id, val) => setItems(prev => ({ ...prev, [id]: val }));
 
   const selectedServicios = SERVICIOS.filter(s => items[s.id] !== undefined);
-  const subtotal = selectedServicios.reduce((a, s) => a + Number(items[s.id] || 0), 0);
-  const iva = subtotal * 0.16;
-  const total = subtotal + iva;
+  const subtotalEstaciones = estaciones.activo ? Number(estaciones.precio || 0) : 0;
+  const subtotalSegundo    = segundoSvc.activo  ? Number(segundoSvc.precio  || 0) : 0;
+  const subtotal  = selectedServicios.reduce((a, s) => a + Number(items[s.id] || 0), 0)
+                    + subtotalEstaciones + subtotalSegundo;
+  const iva       = subtotal * 0.16;
+  const total     = subtotal + iva;
   const animTotal = useAnimatedNumber(total);
+  const precioSugeridoSegundo = Number(items['cuc'] || 0) * 0.9;
 
   const generarPDF = () => {
     setScanLine(true);
     setTimeout(() => setScanLine(false), 900);
 
     // Colores corporativos Kill Plag (azul marino del logo)
-    const AZUL_MARINO = [10, 40, 90];   // #0a285a — el azul más oscuro del escudo
-    const AZUL_MEDIO = [30, 80, 160];   // #1e50a0 — azul medio del logo
-    const AZUL_CLARO = [220, 232, 248];  // #dce8f8 — fondo de filas alternas
-    const BLANCO = [255, 255, 255];
-    const GRIS_TEXTO = [50, 50, 50];
-    const GRIS_LINEA = [200, 210, 225];
+    const AZUL_MARINO  = [10,  40,  90];   // #0a285a — el azul más oscuro del escudo
+    const AZUL_MEDIO   = [30,  80, 160];   // #1e50a0 — azul medio del logo
+    const AZUL_CLARO   = [220, 232, 248];  // #dce8f8 — fondo de filas alternas
+    const BLANCO       = [255, 255, 255];
+    const GRIS_TEXTO   = [50,  50,  50];
+    const GRIS_LINEA   = [200, 210, 225];
 
     const doc = new jsPDF();
     const folio = `KP-${Date.now().toString().slice(-6)}`;
-    const fecha = new Date().toLocaleDateString('es-MX', { day: '2-digit', month: 'long', year: 'numeric' });
+    const fecha = new Date().toLocaleDateString('es-MX', { day:'2-digit', month:'long', year:'numeric' });
 
     // ── HEADER: fondo azul marino completo ──
     doc.setFillColor(...AZUL_MARINO);
@@ -113,7 +127,7 @@ export default function App() {
 
     // Logo embebido en base64
     if (logoB64) {
-      try { doc.addImage(logoB64, 'PNG', 8, 4, 38, 38); } catch (_) { }
+      try { doc.addImage(logoB64, 'PNG', 8, 4, 38, 38); } catch(_) {}
     }
 
     // Nombre y eslogan a la derecha del logo
@@ -126,7 +140,7 @@ export default function App() {
     doc.setFontSize(8);
     doc.setTextColor(180, 205, 240);
     doc.text("FUMIGACIONES — MANEJO INTEGRAL DE PLAGAS Y SANITIZACIÓN", 52, 27);
-    doc.text("Licencia Sanitaria No. 23 AP 09 015 0001", 52, 33);
+    // Licencia sanitaria omitida por solicitud del cliente
 
     // Folio y fecha alineados a la derecha
     doc.setTextColor(160, 195, 235);
@@ -172,7 +186,7 @@ export default function App() {
     doc.setTextColor(...BLANCO);
     doc.setFont("helvetica", "bold");
     doc.setFontSize(8);
-    doc.text("CÓD.", 20, y + 6);
+    doc.text("CÓD.",   20, y + 6);
     doc.text("DESCRIPCIÓN DEL SERVICIO", 38, y + 6);
     doc.text("IMPORTE (MXN)", 168, y + 6);
     y += 12;
@@ -206,6 +220,50 @@ export default function App() {
       y += txt.length > 1 ? 11 : rowH;
     });
 
+    // Fila extra: estaciones para roedores
+    if (estaciones.activo && items['roe'] !== undefined) {
+      const rowH = 9;
+      if (selectedServicios.length % 2 === 0) {
+        doc.setFillColor(...AZUL_CLARO);
+        doc.rect(15, y - 6, 180, rowH, 'F');
+      }
+      doc.setDrawColor(...GRIS_LINEA); doc.setLineWidth(0.2);
+      doc.line(15, y + 3, 195, y + 3);
+      doc.setFontSize(7.5);
+      doc.setTextColor(...AZUL_MEDIO);
+      doc.text('KP-04E', 20, y);
+      doc.setTextColor(...GRIS_TEXTO);
+      const estLabel = `Estaciones para ratones${estaciones.cantidad ? ' (x' + estaciones.cantidad + ' unidades)' : ''}`;
+      const estTxt = doc.splitTextToSize(estLabel, 118);
+      doc.text(estTxt, 38, y);
+      doc.setFont('helvetica', 'bold');
+      doc.text(`$${fmt(estaciones.precio || 0)}`, 192, y, { align: 'right' });
+      doc.setFont('helvetica', 'normal');
+      y += rowH;
+    }
+
+    // Fila extra: segundo servicio cucaracha
+    if (segundoSvc.activo && items['cuc'] !== undefined) {
+      const rowH = 9;
+      const idx2 = selectedServicios.length + (estaciones.activo ? 1 : 0);
+      if (idx2 % 2 === 0) {
+        doc.setFillColor(...AZUL_CLARO);
+        doc.rect(15, y - 6, 180, rowH, 'F');
+      }
+      doc.setDrawColor(...GRIS_LINEA); doc.setLineWidth(0.2);
+      doc.line(15, y + 3, 195, y + 3);
+      doc.setFontSize(7.5);
+      doc.setTextColor(...AZUL_MEDIO);
+      doc.text('KP-01B', 20, y);
+      doc.setTextColor(...GRIS_TEXTO);
+      const txt2 = doc.splitTextToSize('2do Servicio de Seguimiento — Control de Cucaracha (eclosión de huevos)', 118);
+      doc.text(txt2, 38, y);
+      doc.setFont('helvetica', 'bold');
+      doc.text(`$${fmt(segundoSvc.precio || 0)}`, 192, y, { align: 'right' });
+      doc.setFont('helvetica', 'normal');
+      y += txt2.length > 1 ? 11 : rowH;
+    }
+
     // ── BLOQUE TOTALES ──
     y += 6;
     doc.setDrawColor(...GRIS_LINEA);
@@ -217,7 +275,7 @@ export default function App() {
     doc.setTextColor(...GRIS_TEXTO);
     doc.setFont("helvetica", "normal");
     doc.text("Subtotal:", 135, y);
-    doc.text(`$${fmt(subtotal)}`, 192, y, { align: 'right' });
+    doc.text(`$${fmt(subtotal)}`, 192, y, { align: 'right' }); // subtotal ya incluye estaciones y 2do svc
 
     doc.text("IVA (16%):", 135, y + 8);
     doc.text(`$${fmt(iva)}`, 192, y + 8, { align: 'right' });
@@ -257,7 +315,7 @@ export default function App() {
     doc.setTextColor(160, 195, 235);
     doc.setFontSize(7);
     doc.setFont("helvetica", "normal");
-    doc.text("Kill Plag Fumigaciones  ·  Licencia Sanitaria No. 23 AP 09 015 0001", 105, 289, { align: 'center' });
+    doc.text("Kill Plag Fumigaciones  ·  Manejo Integral de Plagas y Sanitización", 105, 289, { align: 'center' });
     doc.text("Generado con Banana-Tech Systems © 2026", 105, 294, { align: 'center' });
 
     doc.save(`KillPlag_Cotizacion_${cliente || 'Cliente'}_${folio}.pdf`);
@@ -338,59 +396,39 @@ export default function App() {
         .field-input::placeholder { color:var(--muted); }
         .field-input:focus { border-color:var(--green); box-shadow:0 0 0 3px var(--green-glow); }
         .list-container { border:1px solid var(--border); border-radius:2px; overflow:hidden; }
-.service-row {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.75rem;
-  padding: 0.85rem 1rem;
-  border-bottom: 1px solid var(--border);
-  cursor: pointer;
-  transition: background .15s;
-  flex-wrap: wrap;  /* ← añade esto */
-}
-
-.svc-name {
-  flex: 1;
-  font-family: var(--display);
-  font-size: 0.92rem;
-  font-weight: 600;
-  letter-spacing: 0.02em;
-  color: #6b9e7a;
-  transition: color .15s;
-  line-height: 1.3;
-  min-width: 0;  /* ← añade esto */
-}
-
-.svc-price-wrap {
-  display: flex;
-  align-items: center;
-  gap: 0.3rem;
-  overflow: hidden;
-  max-width: 0;
-  opacity: 0;
-  transition: max-width .25s ease, opacity .2s ease;
-  width: 100%;        /* ← añade esto */
-  padding-left: 2.5rem; /* ← sangría para alinear bajo el nombre */
-}
-
-.service-row.active .svc-price-wrap {
-  max-width: 100%;   /* ← cambia de 140px a 100% */
-  opacity: 1;
-}
-
-.svc-price-input {
-  background: var(--bg);
-  border: 1px solid var(--green-dim);
-  border-radius: 2px;
-  color: var(--green);
-  font-family: var(--mono);
-  font-size: 0.85rem;
-  padding: 0.4rem 0.5rem;
-  width: 140px;      /* ← ancho fijo cómodo */
-  outline: none;
-  text-align: right;
-  transition: border-color .2s, box-shadow .2s;
-}
+        .service-row {
+          display:flex; align-items:center; gap:1rem; padding:0.85rem 1rem;
+          border-bottom:1px solid var(--border); cursor:pointer; transition:background .15s;
+        }
+        .service-row:last-child { border-bottom:none; }
+        .service-row:hover { background:rgba(74,222,128,0.03); }
+        .service-row.active { background:rgba(74,222,128,0.06); }
+        .svc-check {
+          width:1.1rem; height:1.1rem; border:1.5px solid var(--muted); border-radius:2px;
+          flex-shrink:0; display:flex; align-items:center; justify-content:center; transition:all .15s;
+        }
+        .service-row.active .svc-check { border-color:var(--green); background:var(--green); }
+        .svc-check svg { display:none; }
+        .service-row.active .svc-check svg { display:block; }
+        .svc-code { font-family:var(--mono); font-size:0.6rem; color:var(--muted); width:3rem; flex-shrink:0; }
+        .service-row.active .svc-code { color:var(--green); }
+        .svc-icon { font-size:1rem; flex-shrink:0; }
+        .svc-name {
+          flex:1; font-family:var(--display); font-size:0.92rem; font-weight:600;
+          letter-spacing:0.02em; color:#6b9e7a; transition:color .15s; line-height:1.3;
+        }
+        .service-row.active .svc-name { color:var(--text); }
+        .svc-price-wrap {
+          display:flex; align-items:center; gap:0.3rem;
+          overflow:hidden; max-width:0; opacity:0; transition:max-width .25s ease, opacity .2s ease;
+        }
+        .service-row.active .svc-price-wrap { max-width:140px; opacity:1; }
+        .svc-price-sym { font-family:var(--mono); font-size:0.75rem; color:var(--green); flex-shrink:0; }
+        .svc-price-input {
+          background:var(--bg); border:1px solid var(--green-dim); border-radius:2px;
+          color:var(--green); font-family:var(--mono); font-size:0.85rem;
+          padding:0.4rem 0.5rem; width:100px; outline:none; text-align:right; transition:border-color .2s, box-shadow .2s;
+        }
         .svc-price-input:focus { border-color:var(--green); box-shadow:0 0 0 2px var(--green-glow); }
         .svc-price-input::-webkit-inner-spin-button, .svc-price-input::-webkit-outer-spin-button { -webkit-appearance:none; }
         .totals-panel {
@@ -420,6 +458,21 @@ export default function App() {
         @keyframes scan { 0%{top:0%;opacity:1} 90%{top:100%;opacity:1} 100%{top:100%;opacity:0} }
         .footer { text-align:center; padding:2rem 1rem; font-family:var(--mono); font-size:0.6rem; color:var(--muted); letter-spacing:0.1em; }
         .hint { font-family:var(--mono); font-size:0.6rem; color:var(--muted); text-align:center; margin-top:0.75rem; letter-spacing:0.08em; }
+        .sub-row {
+          background: rgba(74,222,128,0.03); border-top: 1px dashed rgba(74,222,128,0.12);
+          padding: 0.65rem 1rem 0.65rem 3.2rem; display:flex; flex-direction:column; gap:0.6rem;
+        }
+        .sub-check-wrap { display:flex; align-items:center; gap:0.6rem; cursor:pointer; }
+        .sub-check {
+          width:0.9rem; height:0.9rem; border:1.5px solid var(--muted); border-radius:2px;
+          flex-shrink:0; display:flex; align-items:center; justify-content:center; transition:all .15s;
+        }
+        .sub-check.active { border-color:var(--green); background:var(--green); }
+        .sub-label { font-family:var(--mono); font-size:0.68rem; color:var(--muted); letter-spacing:0.04em; }
+        .sub-fields { display:flex; flex-wrap:wrap; gap:0.75rem; padding-left:1.5rem; }
+        .sub-field-wrap { display:flex; flex-direction:column; gap:0.25rem; }
+        .sub-field-label { font-family:var(--mono); font-size:0.58rem; color:var(--muted); letter-spacing:0.06em; }
+        .sub-input { width:120px !important; font-size:0.8rem !important; }
       `}</style>
 
       {scanLine && <div className="scan-overlay"><div className="scan-line" /></div>}
@@ -430,7 +483,7 @@ export default function App() {
           <div className="header">
             <div className="header-badge">SISTEMA DE COTIZACIÓN // KILL PLAG // v2.0</div>
             <h1>KILL PLAG</h1>
-            <p className="header-sub">MANEJO INTEGRAL DE PLAGAS Y SANITIZACIÓN · LIC. 23 AP 09 015 0001</p>
+            <p className="header-sub">MANEJO INTEGRAL DE PLAGAS Y SANITIZACIÓN</p>
             <div className="header-deco">🛡️</div>
           </div>
 
@@ -464,21 +517,76 @@ export default function App() {
                 {SERVICIOS.map(s => {
                   const active = items[s.id] !== undefined;
                   return (
-                    <div key={s.id} className={`service-row${active ? ' active' : ''}`}
-                      onClick={() => toggleItem(s.id)}>
-                      <div className="svc-check">
-                        <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
-                          <path d="M1 4L3.5 6.5L9 1" stroke="#050a0a" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                        </svg>
+                    <div key={s.id}>
+                      {/* Fila principal del servicio */}
+                      <div className={`service-row${active ? ' active' : ''}`}
+                        onClick={() => toggleItem(s.id)}>
+                        <div className="svc-check">
+                          <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
+                            <path d="M1 4L3.5 6.5L9 1" stroke="#050a0a" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                          </svg>
+                        </div>
+                        <span className="svc-code">{s.codigo}</span>
+                        <span className="svc-icon">{s.icono}</span>
+                        <span className="svc-name">{s.nombre}</span>
+                        <div className="svc-price-wrap" onClick={e => e.stopPropagation()}>
+                          <span className="svc-price-sym">$</span>
+                          <input type="number" className="svc-price-input" placeholder="0.00"
+                            value={items[s.id] || ''} onChange={e => setPrice(s.id, e.target.value)} />
+                        </div>
                       </div>
-                      <span className="svc-code">{s.codigo}</span>
-                      <span className="svc-icon">{s.icono}</span>
-                      <span className="svc-name">{s.nombre}</span>
-                      <div className="svc-price-wrap" onClick={e => e.stopPropagation()}>
-                        <span className="svc-price-sym">$</span>
-                        <input type="number" className="svc-price-input" placeholder="0.00"
-                          value={items[s.id] || ''} onChange={e => setPrice(s.id, e.target.value)} />
-                      </div>
+
+                      {/* Sub-opción: Estaciones para roedores */}
+                      {s.id === 'roe' && active && (
+                        <div className="sub-row" onClick={e => e.stopPropagation()}>
+                          <div className="sub-check-wrap" onClick={() => setEstaciones(p => ({ ...p, activo: !p.activo, cantidad: '', precio: '' }))}>
+                            <div className={`sub-check${estaciones.activo ? ' active' : ''}`}>
+                              {estaciones.activo && <svg width="8" height="6" viewBox="0 0 10 8" fill="none"><path d="M1 4L3.5 6.5L9 1" stroke="#050a0a" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+                            </div>
+                            <span className="sub-label">¿Requiere estaciones para ratones?</span>
+                          </div>
+                          {estaciones.activo && (
+                            <div className="sub-fields">
+                              <div className="sub-field-wrap">
+                                <span className="sub-field-label">Cantidad</span>
+                                <input type="number" className="svc-price-input sub-input" placeholder="0"
+                                  value={estaciones.cantidad}
+                                  onChange={e => setEstaciones(p => ({ ...p, cantidad: e.target.value }))} />
+                              </div>
+                              <div className="sub-field-wrap">
+                                <span className="sub-field-label">Precio total $</span>
+                                <input type="number" className="svc-price-input sub-input" placeholder="0.00"
+                                  value={estaciones.precio}
+                                  onChange={e => setEstaciones(p => ({ ...p, precio: e.target.value }))} />
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Sub-opción: Segundo servicio cucaracha */}
+                      {s.id === 'cuc' && active && (
+                        <div className="sub-row" onClick={e => e.stopPropagation()}>
+                          <div className="sub-check-wrap" onClick={() => setSegundoSvc(p => ({ ...p, activo: !p.activo, precio: p.activo ? '' : String(precioSugeridoSegundo.toFixed(2)) }))}>
+                            <div className={`sub-check${segundoSvc.activo ? ' active' : ''}`}>
+                              {segundoSvc.activo && <svg width="8" height="6" viewBox="0 0 10 8" fill="none"><path d="M1 4L3.5 6.5L9 1" stroke="#050a0a" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+                            </div>
+                            <span className="sub-label">¿Incluir 2do servicio de seguimiento?</span>
+                          </div>
+                          {segundoSvc.activo && (
+                            <div className="sub-fields">
+                              <div className="sub-field-wrap">
+                                <span className="sub-field-label">
+                                  Precio 2do servicio ${items['cuc'] ? `(sugerido -10%: $${fmt(precioSugeridoSegundo)})` : ''}
+                                </span>
+                                <input type="number" className="svc-price-input sub-input" placeholder="0.00"
+                                  value={segundoSvc.precio}
+                                  onChange={e => setSegundoSvc(p => ({ ...p, precio: e.target.value }))} />
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
                   );
                 })}
@@ -510,10 +618,10 @@ export default function App() {
             <div>
               <button className="btn-generate" onClick={generarPDF}>
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                  <polyline points="14,2 14,8 20,8" />
-                  <line x1="9" y1="13" x2="15" y2="13" />
-                  <line x1="9" y1="17" x2="15" y2="17" />
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                  <polyline points="14,2 14,8 20,8"/>
+                  <line x1="9" y1="13" x2="15" y2="13"/>
+                  <line x1="9" y1="17" x2="15" y2="17"/>
                 </svg>
                 Emitir Propuesta Profesional
               </button>
