@@ -9,7 +9,8 @@ const SERVICIOS = [
   { id: 'san', codigo: 'KP-05', nombre: 'Sanitización y Desinfección de Alto Nivel', icono: '🧪' },
   { id: 'fum', codigo: 'KP-06', nombre: 'Fumigación Preventiva Residencial/Comercial', icono: '💨' },
   { id: 'ara', codigo: 'KP-07', nombre: 'Control de Arácnidos y Escorpiones', icono: '🦂' },
-  { id: 'urg', codigo: 'KP-08', nombre: 'Servicio de Urgencia / Horario Especial', icono: '⚡' },
+  { id: 'pul', codigo: 'KP-08', nombre: 'Control de Pulga y Garrapata', icono: '🐾' },
+  { id: 'urg', codigo: 'KP-09', nombre: 'Servicio de Urgencia / Horario Especial', icono: '⚡' },
 ];
 
 const fmt = (n) => new Intl.NumberFormat('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n);
@@ -72,8 +73,16 @@ export default function App() {
 
   // Estado extra: estaciones para roedores
   const [estaciones, setEstaciones] = useState({ activo: false, cantidad: '', precio: '' });
-  // Estado extra: segundo servicio para cucaracha
-  const [segundoSvc, setSegundoSvc] = useState({ activo: false, precio: '' });
+  // Estado extra: segundo servicio — aplica a cucaracha (cuc), chinche (chi) y pulga (pul)
+  const [segundoSvcs, setSegundoSvcs] = useState({ cuc: { activo: false, precio: '' }, chi: { activo: false, precio: '' }, pul: { activo: false, precio: '' } });
+
+  const toggleSegundo = (id, precioBase) => {
+    setSegundoSvcs(prev => {
+      const actual = prev[id];
+      return { ...prev, [id]: { activo: !actual.activo, precio: actual.activo ? '' : String((Number(precioBase) * 0.9).toFixed(2)) } };
+    });
+  };
+  const setSegundoPrecio = (id, val) => setSegundoSvcs(prev => ({ ...prev, [id]: { ...prev[id], precio: val } }));
 
   const toggleItem = (id) => {
     setItems(prev => {
@@ -81,7 +90,7 @@ export default function App() {
       if (next[id] !== undefined) {
         delete next[id];
         if (id === 'roe') setEstaciones({ activo: false, cantidad: '', precio: '' });
-        if (id === 'cuc') setSegundoSvc({ activo: false, precio: '' });
+        if (['cuc', 'chi', 'pul'].includes(id)) setSegundoSvcs(prev => ({ ...prev, [id]: { activo: false, precio: '' } }));
       } else {
         next[id] = '';
       }
@@ -93,13 +102,12 @@ export default function App() {
 
   const selectedServicios = SERVICIOS.filter(s => items[s.id] !== undefined);
   const subtotalEstaciones = estaciones.activo ? Number(estaciones.precio || 0) : 0;
-  const subtotalSegundo = segundoSvc.activo ? Number(segundoSvc.precio || 0) : 0;
+  const subtotalSegundos = ['cuc', 'chi', 'pul'].reduce((a, id) => a + (segundoSvcs[id]?.activo ? Number(segundoSvcs[id].precio || 0) : 0), 0);
   const subtotal = selectedServicios.reduce((a, s) => a + Number(items[s.id] || 0), 0)
-    + subtotalEstaciones + subtotalSegundo;
+    + subtotalEstaciones + subtotalSegundos;
   const iva = subtotal * 0.16;
   const total = subtotal + iva;
   const animTotal = useAnimatedNumber(total);
-  const precioSugeridoSegundo = Number(items['cuc'] || 0) * 0.9;
 
   const generarPDF = () => {
     setScanLine(true);
@@ -242,27 +250,30 @@ export default function App() {
       y += rowH;
     }
 
-    // Fila extra: segundo servicio cucaracha
-    if (segundoSvc.activo && items['cuc'] !== undefined) {
-      const rowH = 9;
-      const idx2 = selectedServicios.length + (estaciones.activo ? 1 : 0);
-      if (idx2 % 2 === 0) {
-        doc.setFillColor(...AZUL_CLARO);
-        doc.rect(15, y - 6, 180, rowH, 'F');
+    // Filas extra: segundos servicios (cucaracha, chinche, pulga)
+    const segundosConfig = [
+      { id: 'cuc', codigo: 'KP-01B', desc: '2do Servicio de Seguimiento — Control de Cucaracha (eclosión de huevos)' },
+      { id: 'chi', codigo: 'KP-02B', desc: '2do Servicio de Seguimiento — Tratamiento Chinche de Cama' },
+      { id: 'pul', codigo: 'KP-08B', desc: '2do Servicio de Seguimiento — Control de Pulga y Garrapata' },
+    ];
+    segundosConfig.forEach(cfg => {
+      const svc2 = segundoSvcs[cfg.id];
+      if (svc2?.activo && items[cfg.id] !== undefined) {
+        const rowH = 9;
+        doc.setDrawColor(...GRIS_LINEA); doc.setLineWidth(0.2);
+        doc.line(15, y + 3, 195, y + 3);
+        doc.setFontSize(7.5);
+        doc.setTextColor(...AZUL_MEDIO);
+        doc.text(cfg.codigo, 20, y);
+        doc.setTextColor(...GRIS_TEXTO);
+        const txt2 = doc.splitTextToSize(cfg.desc, 118);
+        doc.text(txt2, 38, y);
+        doc.setFont('helvetica', 'bold');
+        doc.text(`$${fmt(svc2.precio || 0)}`, 192, y, { align: 'right' });
+        doc.setFont('helvetica', 'normal');
+        y += txt2.length > 1 ? 11 : rowH;
       }
-      doc.setDrawColor(...GRIS_LINEA); doc.setLineWidth(0.2);
-      doc.line(15, y + 3, 195, y + 3);
-      doc.setFontSize(7.5);
-      doc.setTextColor(...AZUL_MEDIO);
-      doc.text('KP-01B', 20, y);
-      doc.setTextColor(...GRIS_TEXTO);
-      const txt2 = doc.splitTextToSize('2do Servicio de Seguimiento — Control de Cucaracha (eclosión de huevos)', 118);
-      doc.text(txt2, 38, y);
-      doc.setFont('helvetica', 'bold');
-      doc.text(`$${fmt(segundoSvc.precio || 0)}`, 192, y, { align: 'right' });
-      doc.setFont('helvetica', 'normal');
-      y += txt2.length > 1 ? 11 : rowH;
-    }
+    });
 
     // ── BLOQUE TOTALES ──
     y += 6;
@@ -574,29 +585,33 @@ export default function App() {
                         </div>
                       )}
 
-                      {/* Sub-opción: Segundo servicio cucaracha */}
-                      {s.id === 'cuc' && active && (
-                        <div className="sub-row" onClick={e => e.stopPropagation()}>
-                          <div className="sub-check-wrap" onClick={() => setSegundoSvc(p => ({ ...p, activo: !p.activo, precio: p.activo ? '' : String(precioSugeridoSegundo.toFixed(2)) }))}>
-                            <div className={`sub-check${segundoSvc.activo ? ' active' : ''}`}>
-                              {segundoSvc.activo && <svg width="8" height="6" viewBox="0 0 10 8" fill="none"><path d="M1 4L3.5 6.5L9 1" stroke="#050a0a" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" /></svg>}
-                            </div>
-                            <span className="sub-label">¿Incluir 2do servicio de seguimiento?</span>
-                          </div>
-                          {segundoSvc.activo && (
-                            <div className="sub-fields">
-                              <div className="sub-field-wrap">
-                                <span className="sub-field-label">
-                                  Precio 2do servicio ${items['cuc'] ? `(sugerido -10%: $${fmt(precioSugeridoSegundo)})` : ''}
-                                </span>
-                                <input type="number" className="svc-price-input sub-input" placeholder="0.00"
-                                  value={segundoSvc.precio}
-                                  onChange={e => setSegundoSvc(p => ({ ...p, precio: e.target.value }))} />
+                      {/* Sub-opción: 2do servicio para cucaracha, chinche y pulga */}
+                      {['cuc', 'chi', 'pul'].includes(s.id) && active && (() => {
+                        const svc2 = segundoSvcs[s.id];
+                        const sugerido = Number(items[s.id] || 0) * 0.9;
+                        return (
+                          <div className="sub-row" onClick={e => e.stopPropagation()}>
+                            <div className="sub-check-wrap" onClick={() => toggleSegundo(s.id, items[s.id])}>
+                              <div className={`sub-check${svc2.activo ? ' active' : ''}`}>
+                                {svc2.activo && <svg width="8" height="6" viewBox="0 0 10 8" fill="none"><path d="M1 4L3.5 6.5L9 1" stroke="#050a0a" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" /></svg>}
                               </div>
+                              <span className="sub-label">¿Incluir 2do servicio de seguimiento?</span>
                             </div>
-                          )}
-                        </div>
-                      )}
+                            {svc2.activo && (
+                              <div className="sub-fields">
+                                <div className="sub-field-wrap">
+                                  <span className="sub-field-label">
+                                    Precio 2do servicio {items[s.id] ? `(sugerido -10%: $${fmt(sugerido)})` : ''}
+                                  </span>
+                                  <input type="number" className="svc-price-input sub-input" placeholder="0.00"
+                                    value={svc2.precio}
+                                    onChange={e => setSegundoPrecio(s.id, e.target.value)} />
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })()}
                     </div>
                   );
                 })}
