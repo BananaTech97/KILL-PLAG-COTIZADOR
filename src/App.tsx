@@ -3,13 +3,13 @@ import { jsPDF } from "jspdf";
 
 const SERVICIOS = [
   { id: 'cuc', codigo: 'KP-01', nombre: 'Control de Cucaracha Germánica/Americana', icono: '🪳' },
-  { id: 'chi', codigo: 'KP-02', nombre: 'Tratamiento contra Chinche de Cama',        icono: '🛏️' },
+  { id: 'chi', codigo: 'KP-02', nombre: 'Tratamiento contra Chinche de Cama', icono: '🛏️' },
   { id: 'ter', codigo: 'KP-03', nombre: 'Barrera Química contra Termita Subterránea', icono: '🪵' },
-  { id: 'roe', codigo: 'KP-04', nombre: 'Control y Reubicación de Roedores',          icono: '🐀' },
-  { id: 'san', codigo: 'KP-05', nombre: 'Sanitización y Desinfección de Alto Nivel',  icono: '🧪' },
-  { id: 'fum', codigo: 'KP-06', nombre: 'Fumigación Preventiva Residencial/Comercial',icono: '💨' },
-  { id: 'ara', codigo: 'KP-07', nombre: 'Control de Arácnidos y Escorpiones',         icono: '🦂' },
-  { id: 'urg', codigo: 'KP-08', nombre: 'Servicio de Urgencia / Horario Especial',    icono: '⚡' },
+  { id: 'roe', codigo: 'KP-04', nombre: 'Control y Reubicación de Roedores', icono: '🐀' },
+  { id: 'san', codigo: 'KP-05', nombre: 'Sanitización y Desinfección de Alto Nivel', icono: '🧪' },
+  { id: 'fum', codigo: 'KP-06', nombre: 'Fumigación Preventiva Residencial/Comercial', icono: '💨' },
+  { id: 'ara', codigo: 'KP-07', nombre: 'Control de Arácnidos y Escorpiones', icono: '🦂' },
+  { id: 'urg', codigo: 'KP-08', nombre: 'Servicio de Urgencia / Horario Especial', icono: '⚡' },
 ];
 
 const fmt = (n) => new Intl.NumberFormat('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n);
@@ -18,7 +18,7 @@ function useAnimatedNumber(target) {
   const [display, setDisplay] = useState(target);
   useEffect(() => {
     const start = display;
-    const diff  = target - start;
+    const diff = target - start;
     if (diff === 0) return;
     const steps = 18;
     let i = 0;
@@ -33,11 +33,11 @@ function useAnimatedNumber(target) {
 }
 
 export default function App() {
-  const [cliente,   setCliente]   = useState('');
+  const [cliente, setCliente] = useState('');
   const [ubicacion, setUbicacion] = useState('');
-  const [items,     setItems]     = useState({});
-  const [scanLine,  setScanLine]  = useState(false);
-  const [logoB64,   setLogoB64]   = useState(null);
+  const [items, setItems] = useState({});
+  const [scanLine, setScanLine] = useState(false);
+  const [logoB64, setLogoB64] = useState(null);
 
   // Carga el logo, recorta esquinas redondeadas y lo convierte a base64 para el PDF
   useEffect(() => {
@@ -45,10 +45,10 @@ export default function App() {
     img.crossOrigin = 'anonymous';
     img.src = '/logo-kill-plag.png'; // coloca el PNG en /public de tu proyecto Vite/CRA
     img.onload = () => {
-      const size   = Math.max(img.naturalWidth, img.naturalHeight);
+      const size = Math.max(img.naturalWidth, img.naturalHeight);
       const radius = size * 0.12; // 12% de radio — ajusta a gusto
       const canvas = document.createElement('canvas');
-      canvas.width  = img.naturalWidth;
+      canvas.width = img.naturalWidth;
       canvas.height = img.naturalHeight;
       const ctx = canvas.getContext('2d');
       const w = img.naturalWidth, h = img.naturalHeight;
@@ -93,11 +93,11 @@ export default function App() {
 
   const selectedServicios = SERVICIOS.filter(s => items[s.id] !== undefined);
   const subtotalEstaciones = estaciones.activo ? Number(estaciones.precio || 0) : 0;
-  const subtotalSegundo    = segundoSvc.activo  ? Number(segundoSvc.precio  || 0) : 0;
-  const subtotal  = selectedServicios.reduce((a, s) => a + Number(items[s.id] || 0), 0)
-                    + subtotalEstaciones + subtotalSegundo;
-  const iva       = subtotal * 0.16;
-  const total     = subtotal + iva;
+  const subtotalSegundo = segundoSvc.activo ? Number(segundoSvc.precio || 0) : 0;
+  const subtotal = selectedServicios.reduce((a, s) => a + Number(items[s.id] || 0), 0)
+    + subtotalEstaciones + subtotalSegundo;
+  const iva = subtotal * 0.16;
+  const total = subtotal + iva;
   const animTotal = useAnimatedNumber(total);
   const precioSugeridoSegundo = Number(items['cuc'] || 0) * 0.9;
 
@@ -106,16 +106,16 @@ export default function App() {
     setTimeout(() => setScanLine(false), 900);
 
     // Colores corporativos Kill Plag (azul marino del logo)
-    const AZUL_MARINO  = [10,  40,  90];   // #0a285a — el azul más oscuro del escudo
-    const AZUL_MEDIO   = [30,  80, 160];   // #1e50a0 — azul medio del logo
-    const AZUL_CLARO   = [220, 232, 248];  // #dce8f8 — fondo de filas alternas
-    const BLANCO       = [255, 255, 255];
-    const GRIS_TEXTO   = [50,  50,  50];
-    const GRIS_LINEA   = [200, 210, 225];
+    const AZUL_MARINO = [10, 40, 90];   // #0a285a — el azul más oscuro del escudo
+    const AZUL_MEDIO = [30, 80, 160];   // #1e50a0 — azul medio del logo
+    const AZUL_CLARO = [220, 232, 248];  // #dce8f8 — fondo de filas alternas
+    const BLANCO = [255, 255, 255];
+    const GRIS_TEXTO = [50, 50, 50];
+    const GRIS_LINEA = [200, 210, 225];
 
     const doc = new jsPDF();
     const folio = `KP-${Date.now().toString().slice(-6)}`;
-    const fecha = new Date().toLocaleDateString('es-MX', { day:'2-digit', month:'long', year:'numeric' });
+    const fecha = new Date().toLocaleDateString('es-MX', { day: '2-digit', month: 'long', year: 'numeric' });
 
     // ── HEADER: fondo azul marino completo ──
     doc.setFillColor(...AZUL_MARINO);
@@ -127,7 +127,7 @@ export default function App() {
 
     // Logo embebido en base64
     if (logoB64) {
-      try { doc.addImage(logoB64, 'PNG', 8, 4, 38, 38); } catch(_) {}
+      try { doc.addImage(logoB64, 'PNG', 8, 4, 38, 38); } catch (_) { }
     }
 
     // Nombre y eslogan a la derecha del logo
@@ -186,7 +186,7 @@ export default function App() {
     doc.setTextColor(...BLANCO);
     doc.setFont("helvetica", "bold");
     doc.setFontSize(8);
-    doc.text("CÓD.",   20, y + 6);
+    doc.text("CÓD.", 20, y + 6);
     doc.text("DESCRIPCIÓN DEL SERVICIO", 38, y + 6);
     doc.text("IMPORTE (MXN)", 168, y + 6);
     y += 12;
@@ -399,6 +399,7 @@ export default function App() {
         .service-row {
           display:flex; align-items:center; gap:1rem; padding:0.85rem 1rem;
           border-bottom:1px solid var(--border); cursor:pointer; transition:background .15s;
+          flex-wrap:wrap;
         }
         .service-row:last-child { border-bottom:none; }
         .service-row:hover { background:rgba(74,222,128,0.03); }
@@ -414,13 +415,14 @@ export default function App() {
         .service-row.active .svc-code { color:var(--green); }
         .svc-icon { font-size:1rem; flex-shrink:0; }
         .svc-name {
-          flex:1; font-family:var(--display); font-size:0.92rem; font-weight:600;
+          flex:1; min-width:0; font-family:var(--display); font-size:0.92rem; font-weight:600;
           letter-spacing:0.02em; color:#6b9e7a; transition:color .15s; line-height:1.3;
         }
         .service-row.active .svc-name { color:var(--text); }
         .svc-price-wrap {
           display:flex; align-items:center; gap:0.3rem;
-          overflow:hidden; max-width:0; opacity:0; transition:max-width .25s ease, opacity .2s ease;
+          overflow:hidden; max-width:0; opacity:0;
+          transition:max-width .25s ease, opacity .2s ease;
         }
         .service-row.active .svc-price-wrap { max-width:140px; opacity:1; }
         .svc-price-sym { font-family:var(--mono); font-size:0.75rem; color:var(--green); flex-shrink:0; }
@@ -431,6 +433,14 @@ export default function App() {
         }
         .svc-price-input:focus { border-color:var(--green); box-shadow:0 0 0 2px var(--green-glow); }
         .svc-price-input::-webkit-inner-spin-button, .svc-price-input::-webkit-outer-spin-button { -webkit-appearance:none; }
+        @media(max-width:540px) {
+          .svc-price-wrap { max-width:0 !important; }
+          .service-row.active .svc-price-wrap {
+            max-width:100% !important; opacity:1;
+            width:100%; padding-left:2.6rem;
+            margin-top:0.25rem;
+          }
+        }
         .totals-panel {
           background:var(--bg); border:1px solid var(--border); border-radius:2px;
           padding:1.25rem 1.5rem; display:flex; flex-direction:column; gap:0.5rem;
@@ -523,7 +533,7 @@ export default function App() {
                         onClick={() => toggleItem(s.id)}>
                         <div className="svc-check">
                           <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
-                            <path d="M1 4L3.5 6.5L9 1" stroke="#050a0a" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                            <path d="M1 4L3.5 6.5L9 1" stroke="#050a0a" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                           </svg>
                         </div>
                         <span className="svc-code">{s.codigo}</span>
@@ -541,7 +551,7 @@ export default function App() {
                         <div className="sub-row" onClick={e => e.stopPropagation()}>
                           <div className="sub-check-wrap" onClick={() => setEstaciones(p => ({ ...p, activo: !p.activo, cantidad: '', precio: '' }))}>
                             <div className={`sub-check${estaciones.activo ? ' active' : ''}`}>
-                              {estaciones.activo && <svg width="8" height="6" viewBox="0 0 10 8" fill="none"><path d="M1 4L3.5 6.5L9 1" stroke="#050a0a" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+                              {estaciones.activo && <svg width="8" height="6" viewBox="0 0 10 8" fill="none"><path d="M1 4L3.5 6.5L9 1" stroke="#050a0a" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" /></svg>}
                             </div>
                             <span className="sub-label">¿Requiere estaciones para ratones?</span>
                           </div>
@@ -569,7 +579,7 @@ export default function App() {
                         <div className="sub-row" onClick={e => e.stopPropagation()}>
                           <div className="sub-check-wrap" onClick={() => setSegundoSvc(p => ({ ...p, activo: !p.activo, precio: p.activo ? '' : String(precioSugeridoSegundo.toFixed(2)) }))}>
                             <div className={`sub-check${segundoSvc.activo ? ' active' : ''}`}>
-                              {segundoSvc.activo && <svg width="8" height="6" viewBox="0 0 10 8" fill="none"><path d="M1 4L3.5 6.5L9 1" stroke="#050a0a" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+                              {segundoSvc.activo && <svg width="8" height="6" viewBox="0 0 10 8" fill="none"><path d="M1 4L3.5 6.5L9 1" stroke="#050a0a" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" /></svg>}
                             </div>
                             <span className="sub-label">¿Incluir 2do servicio de seguimiento?</span>
                           </div>
@@ -618,10 +628,10 @@ export default function App() {
             <div>
               <button className="btn-generate" onClick={generarPDF}>
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                  <polyline points="14,2 14,8 20,8"/>
-                  <line x1="9" y1="13" x2="15" y2="13"/>
-                  <line x1="9" y1="17" x2="15" y2="17"/>
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                  <polyline points="14,2 14,8 20,8" />
+                  <line x1="9" y1="13" x2="15" y2="13" />
+                  <line x1="9" y1="17" x2="15" y2="17" />
                 </svg>
                 Emitir Propuesta Profesional
               </button>
