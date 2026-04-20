@@ -414,7 +414,10 @@ export default function App() {
           letter-spacing:0.12em; text-transform:uppercase; color:var(--text);
         }
         .inputs-grid { display:grid; grid-template-columns:1fr 1fr; gap:1rem; }
-        @media(max-width:540px){ .inputs-grid{grid-template-columns:1fr;} }
+        @media(max-width:600px){
+          .inputs-grid { grid-template-columns:1fr !important; }
+          .inputs-grid > * { grid-column: 1 !important; }
+        }
         .field-wrap { display:flex; flex-direction:column; gap:0.35rem; }
         .field-label { font-family:var(--mono); font-size:0.6rem; color:var(--muted); letter-spacing:0.1em; }
         .field-input {
