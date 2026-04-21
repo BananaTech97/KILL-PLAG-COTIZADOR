@@ -42,7 +42,10 @@ export default function App() {
   const [telefono,     setTelefono]     = useState('');
   const [procedimiento,setProcedimiento]= useState('');
   const [plaguicida,   setPlaguicida]   = useState('');
-  const [observaciones,setObservaciones]= useState('');
+  const [obsCliente,   setObsCliente]   = useState('');
+  const [obsServicio,  setObsServicio]  = useState('');
+  const [animalRastrero,setAnimalRastrero]= useState('');
+  const [fechaServicio,setFechaServicio]= useState('');
   const [horaLlegada,  setHoraLlegada]  = useState('');
   const [horaSalida,   setHoraSalida]   = useState('');
   const [tecnico,      setTecnico]      = useState('');
@@ -219,7 +222,7 @@ export default function App() {
     drawField('Colonia', colonia, 18, y + 17, 88);
     drawField('Ciudad', ciudad, 110, y + 17, 82);
     drawField('Teléfono', telefono, 110, y + 9, 82);
-    drawField('Observaciones', observaciones, 18, y + 26, 174);
+    drawField('Observaciones', obsCliente, 18, y + 26, 174);
 
     // ── BLOQUE TIPO DE SERVICIO ──────────────────────────────────────
     y += 44;
@@ -294,12 +297,13 @@ export default function App() {
     drawSectionTitle('DETALLES TÉCNICOS DEL SERVICIO', y);
     y += 10;
     doc.setFillColor(...GRIS_FONDO);
-    doc.rect(15, y - 3, 180, 28, 'F');
-    doc.setDrawColor(...GRIS_LINEA); doc.rect(15, y - 3, 180, 28, 'S');
-    drawField('Procedimiento', procedimiento, 18, y + 1, 174);
-    drawField('Plaguicida', plaguicida, 18, y + 10, 174);
-    drawField('Observaciones', observaciones, 18, y + 19, 174);
-    y += 33;
+    doc.rect(15, y - 3, 180, 46, 'F');
+    doc.setDrawColor(...GRIS_LINEA); doc.rect(15, y - 3, 180, 46, 'S');
+    drawField('Animal / Insecto', animalRastrero, 18, y + 1, 174);
+    drawField('Procedimiento', procedimiento, 18, y + 10, 174);
+    drawField('Plaguicida', plaguicida, 18, y + 19, 174);
+    drawField('Observaciones', obsServicio, 18, y + 28, 174);
+    y += 51;
 
     // ── FECHA / HORARIOS / FIRMA ─────────────────────────────────────
     // Dos columnas: izq horarios, der firma
@@ -314,7 +318,8 @@ export default function App() {
     doc.setTextColor(...AZUL_MARINO); doc.setFont('helvetica', 'bold'); doc.setFontSize(7.5);
     doc.text('FECHA Y HORARIO', 18, y + 6);
     doc.setFont('helvetica', 'normal'); doc.setTextColor(...GRIS_TEXTO); doc.setFontSize(7);
-    doc.text(`Fecha: ${fecha}`, 18, y + 13);
+    const fechaMostrar = fechaServicio ? new Date(fechaServicio + 'T12:00:00').toLocaleDateString('es-MX', {day:'2-digit', month:'long', year:'numeric'}) : fecha;
+    doc.text(`Fecha: ${fechaMostrar}`, 18, y + 13);
     doc.text(`Hra. llegada: ${horaLlegada || '___________'}`, 18, y + 19);
     doc.text(`Hra. salida:  ${horaSalida  || '___________'}`, 18, y + 25);
 
@@ -567,6 +572,11 @@ export default function App() {
                   <input className="field-input" placeholder="Ej. Yautepec, Morelos"
                     value={ciudad} onChange={e => setCiudad(e.target.value)} />
                 </div>
+                <div className="field-wrap" style={{gridColumn:'span 2'}}>
+                  <label className="field-label">// observaciones del cliente (pagos, adeudos, notas)</label>
+                  <input className="field-input" placeholder="Ej. Debe $500 del servicio anterior, pagó con transferencia"
+                    value={obsCliente} onChange={e => setObsCliente(e.target.value)} />
+                </div>
               </div>
             </section>
 
@@ -576,6 +586,11 @@ export default function App() {
                 <h2>Detalles del Servicio</h2>
               </div>
               <div className="inputs-grid">
+                <div className="field-wrap" style={{gridColumn:'span 2'}}>
+                  <label className="field-label">// animal / insecto rastrero</label>
+                  <input className="field-input" placeholder="Ej. Alacrán, cucaracha americana, rata noruega"
+                    value={animalRastrero} onChange={e => setAnimalRastrero(e.target.value)} />
+                </div>
                 <div className="field-wrap" style={{gridColumn:'span 2'}}>
                   <label className="field-label">// procedimiento</label>
                   <input className="field-input" placeholder="Ej. Aspersión manual en exteriores, jardín y azotea"
@@ -587,9 +602,15 @@ export default function App() {
                     value={plaguicida} onChange={e => setPlaguicida(e.target.value)} />
                 </div>
                 <div className="field-wrap" style={{gridColumn:'span 2'}}>
-                  <label className="field-label">// observaciones</label>
-                  <input className="field-input" placeholder="Ej. Se aplica dosis inicial plaguicida Biothine Flow"
-                    value={observaciones} onChange={e => setObservaciones(e.target.value)} />
+                  <label className="field-label">// observaciones del servicio (actividad de plaga, condiciones)</label>
+                  <input className="field-input" placeholder="Ej. Mucha actividad en cocina, humedad elevada en sótano"
+                    value={obsServicio} onChange={e => setObsServicio(e.target.value)} />
+                </div>
+                <div className="field-wrap" style={{gridColumn:'span 2'}}>
+                  <label className="field-label">// fecha de realización del servicio</label>
+                  <input className="field-input" type="date"
+                    value={fechaServicio} onChange={e => setFechaServicio(e.target.value)}
+                    style={{colorScheme:'dark'}} />
                 </div>
                 <div className="field-wrap">
                   <label className="field-label">// hora de llegada</label>
